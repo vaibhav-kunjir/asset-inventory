@@ -1,0 +1,22 @@
+[project]
+name = "asset-inventory-scanner"
+version = "0.1.0"
+description = "Asset Inventory and Vulnerability Scanner with CPE/CVE matching"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.104.1",
+    "uvicorn[standard]>=0.24.0",
+    "jinja2>=3.1.2",
+    "pydantic>=2.11.7",
+    "rich>=14.0.0",
+    "typer>=0.16.0",
+    "python-multipart>=0.0.6",
+]
+
+[project.scripts]
+asset-scanner = "main:app"
+
+[tool.uv]
+dev-dependencies = []
+

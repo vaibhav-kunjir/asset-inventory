@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Service Vulnerability Scanner</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+        
+        body {
+            background-color: #f8f9fa;
+            min-height: 100vh;
+        }
+        
+        .navbar {
+            background-color: #1a1d29;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border: none;
+        }
+        
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.5rem;
+            letter-spacing: -0.5px;
+        }
+        
+        .stats-card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            padding: 30px;
+            margin-bottom: 20px;
+            border: 1px solid #e9ecef;
+        }
+        
+        .stat-box {
+            text-align: center;
+            padding: 20px 10px;
+            position: relative;
+        }
+        
+        .stat-box::after {
+            content: '';
+            position: absolute;
+            right: 0;
+            top: 20%;
+            height: 60%;
+            width: 1px;
+            background: linear-gradient(to bottom, transparent, #e0e0e0, transparent);
+        }
+        
+        .stat-box:last-child::after {
+            display: none;
+        }
+        
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+        
+        .stat-number.danger {
+            color: #dc3545;
+        }
+        
+        .stat-number.warning {
+            color: #fd7e14;
+        }
+        
+        .stat-label {
+            font-size: 0.875rem;
+            color: #6c757d;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .search-container {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            padding: 20px;
+            margin-bottom: 15px;
+            border: 1px solid #e9ecef;
+        }
+        
+        .search-container input {
+            border: 1px solid #dee2e6;
+            padding: 12px 16px;
+            font-size: 0.95rem;
+        }
+        
+        .search-container input:focus {
+            border-color: #0d6efd;
+            box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
+        }
+        
+        .filter-bar {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border: 1px solid #e9ecef;
+        }
+        
+        .filter-bar .form-select,
+        .filter-bar .form-control {
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+        }
+        
+        .filter-bar .form-select:focus,
+        .filter-bar .form-control:focus {
+            border-color: #0d6efd;
+            box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
+        }
+        
+        .host-card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-bottom: 15px;
+            border-left: 4px solid #e9ecef;
+            border: 1px solid #e9ecef;
+            transition: all 0.2s ease;
+        }
+        
+        .host-card:hover {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+        
+        .host-card.critical {
+            border-left: 4px solid #dc3545;
+        }
+        
+        .host-card.high {
+            border-left: 4px solid #fd7e14;
+        }
+        
+        .host-card.medium {
+            border-left: 4px solid #ffc107;
+        }
+        
+        .host-card.low {
+            border-left: 4px solid #28a745;
+        }
+        
+        .host-header {
+            padding: 25px 30px;
+            cursor: pointer;
+            user-select: none;
+            transition: background 0.2s ease;
+        }
+        
+        .host-header:hover {
+            background-color: rgba(0,0,0,0.02);
+        }
+        
+        .host-services {
+            padding: 0 30px 25px 30px;
+            background-color: #fafbfc;
+        }
+        
+        .service-row {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 12px;
+            border: 1px solid #e9ecef;
+            transition: all 0.2s ease;
+        }
+        
+        .service-row:hover {
+            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+            border-color: #667eea;
+        }
+        
+        .risk-score {
+            font-size: 1.5rem;
+            font-weight: 700;
+            padding: 10px 16px;
+            border-radius: 6px;
+            display: inline-block;
+            min-width: 70px;
+            text-align: center;
+        }
+        
+        .risk-score.critical {
+            background-color: #dc3545;
+            color: white;
+        }
+        
+        .risk-score.high {
+            background-color: #fd7e14;
+            color: white;
+        }
+        
+        .risk-score.medium {
+            background-color: #ffc107;
+            color: #000;
+        }
+        
+        .risk-score.low {
+            background-color: #28a745;
+            color: white;
+        }
+        
+        .risk-score.none {
+            background-color: #6c757d;
+            color: white;
+        }
+        
+        .risk-badge-critical {
+            background-color: #dc3545;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+        
+        .risk-badge-high {
+            background-color: #fd7e14;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+        
+        .risk-badge-medium {
+            background-color: #ffc107;
+            color: #000;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+        
+        .risk-badge-low {
+            background-color: #28a745;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+        
+        .risk-badge-none {
+            background-color: #6c757d;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+        
+        .badge {
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-weight: 500;
+            font-size: 0.8rem;
+        }
+        
+        .severity-critical {
+            background-color: #dc3545;
+            color: white;
+        }
+        
+        .severity-high {
+            background-color: #fd7e14;
+            color: white;
+        }
+        
+        .severity-medium {
+            background-color: #ffc107;
+            color: #000;
+        }
+        
+        .severity-low {
+            background-color: #28a745;
+            color: white;
+        }
+        
+        .host-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #2c3e50;
+        }
+        
+        .host-summary {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        
+        .btn {
+            border-radius: 6px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+        
+        .btn-primary {
+            background-color: #0d6efd;
+            border: none;
+        }
+        
+        .btn-primary:hover {
+            background-color: #0b5ed7;
+        }
+        
+        .btn-success {
+            background-color: #28a745;
+            border: none;
+        }
+        
+        .btn-success:hover {
+            background-color: #218838;
+        }
+        
+        .btn-outline-secondary {
+            border: 1px solid #dee2e6;
+        }
+        
+        .btn-outline-secondary:hover {
+            background-color: #e9ecef;
+            border-color: #dee2e6;
+        }
+        
+        .page-header {
+            margin-bottom: 30px;
+        }
+        
+        .page-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+        
+        .page-subtitle {
+            color: #7f8c8d;
+            font-size: 1rem;
+            font-weight: 400;
+        }
+        
+        .chevron {
+            transition: transform 0.2s ease;
+            font-size: 1.2rem;
+            color: #6c757d;
+        }
+        
+        .collapsed .chevron {
+            transform: rotate(-90deg);
+        }
+        
+        .badge-eol {
+            background-color: #6c5ce7;
+            color: white;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .expand-collapse-btn {
+            background: white;
+            border: 1px solid #dee2e6;
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        
+        .expand-collapse-btn:hover {
+            background-color: #f8f9fa;
+            border-color: #adb5bd;
+        }
+        
+        .section-header {
+            background: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border: 1px solid #e9ecef;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #2c3e50;
+            margin: 0;
+        }
+        
+        .filter-label {
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 8px;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .no-data-card {
+            background: white;
+            border-radius: 16px;
+            padding: 60px;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.08);
+        }
+        
+        .no-data-icon {
+            font-size: 4rem;
+            color: #e9ecef;
+            margin-bottom: 20px;
+        }
+        
+        code {
+            background-color: #2c3e50;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        
+        .dropdown-menu {
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            border: 1px solid #dee2e6;
+        }
+        
+        .dropdown-item {
+            padding: 10px 16px;
+            font-weight: 500;
+        }
+        
+        .dropdown-item:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .modal-content {
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+        }
+        
+        .modal-header {
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .modal-footer {
+            background-color: #f8f9fa;
+            border-top: 1px solid #dee2e6;
+        }
+        
+        .list-group-item {
+            border: 1px solid #e9ecef;
+            transition: all 0.2s ease;
+        }
+        
+        .list-group-item:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .list-group-item.active {
+            background-color: #0d6efd;
+            border-color: #0d6efd;
+        }
+        
+        #clientSearch {
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+        }
+        
+        #clientSearch:focus {
+            border-color: #0d6efd;
+            box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-dark">
+        <div class="container-fluid">
+            <span class="navbar-brand mb-0 h1">
+                <i class="bi bi-shield-check-fill"></i> Security Vulnerability Scanner
+            </span>
+            <div class="d-flex gap-3 align-items-center">
+                <!-- Client Selector -->
+                <button class="btn btn-sm btn-outline-light" type="button" data-bs-toggle="modal" data-bs-target="#clientModal">
+                    <i class="bi bi-building"></i> 
+                    {% if selected_client_id and selected_client_id != 'all' %}
+                        {% for client in clients %}
+                            {% if client.id|string == selected_client_id %}
+                                {{ client.name }}
+                            {% endif %}
+                        {% endfor %}
+                    {% else %}
+                        All Clients ({{ clients|length }})
+                    {% endif %}
+                </button>
+                
+                <span class="badge bg-light text-dark" style="font-size: 0.9rem; padding: 8px 12px; border-radius: 6px;">
+                    <i class="bi bi-hdd-network"></i> {{ stats.total_hosts }} Hosts | 
+                    <i class="bi bi-diagram-3"></i> {{ stats.total_services }} Services
+                </span>
+                <button class="btn btn-sm btn-outline-light" type="button" data-bs-toggle="collapse" data-bs-target="#searchCollapse">
+                    <i class="bi bi-search"></i> Search
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4" style="padding-left: 20px; padding-right: 20px;">
+        
+        <!-- Collapsible Search Bar -->
+        <div class="collapse" id="searchCollapse">
+            <div class="search-container">
+                <form method="get" action="/">
+                    <input type="hidden" name="client_id" value="{{ selected_client_id or 'all' }}">
+                    <div class="input-group">
+                        <span class="input-group-text bg-white">
+                            <i class="bi bi-search text-muted"></i>
+                        </span>
+                        <input type="text" name="search" class="form-control" 
+                               placeholder="Search by IP address, hostname, product, or port number..." 
+                               value="{{ search_query or '' }}">
+                        <button class="btn btn-primary" type="submit">
+                            Search
+                        </button>
+                        {% if search_query %}
+                        <a href="/" class="btn btn-outline-secondary">
+                            <i class="bi bi-x-lg"></i> Clear
+                        </a>
+                        {% endif %}
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Summary Statistics -->
+        <div class="stats-card">
+            <div class="page-header text-center mb-4">
+                <h2 class="page-title"><i class="bi bi-graph-up-arrow"></i> Security Overview</h2>
+                <p class="page-subtitle">Real-time vulnerability assessment across your infrastructure</p>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-2 stat-box">
+                    <div class="stat-number">{{ stats.total_hosts }}</div>
+                    <div class="stat-label">Hosts Scanned</div>
+                </div>
+                <div class="col-md-2 stat-box">
+                    <div class="stat-number">{{ stats.total_services }}</div>
+                    <div class="stat-label">Services Found</div>
+                </div>
+                <div class="col-md-2 stat-box">
+                    <div class="stat-number danger">{{ stats.total_critical }}</div>
+                    <div class="stat-label">Critical CVEs</div>
+                </div>
+                <div class="col-md-2 stat-box">
+                    <div class="stat-number warning">{{ stats.total_high }}</div>
+                    <div class="stat-label">High CVEs</div>
+                </div>
+                <div class="col-md-2 stat-box">
+                    <div class="stat-number">{{ stats.total_vulnerabilities }}</div>
+                    <div class="stat-label">Total CVEs</div>
+                </div>
+                <div class="col-md-2 stat-box">
+                    <div class="stat-number" style="background: linear-gradient(135deg, #a29bfe, #6c5ce7); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">{{ stats.total_eol }}</div>
+                    <div class="stat-label">EOL Products</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filter Bar -->
+        <div class="filter-bar">
+            <form method="get" action="/" id="filterForm">
+                <input type="hidden" name="search" value="{{ search_query or '' }}">
+                <input type="hidden" name="client_id" value="{{ selected_client_id or 'all' }}">
+                
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-2">
+                        <label class="filter-label">Risk Level</label>
+                        <select name="risk_level" class="form-select">
+                            <option value="all" {% if risk_level_filter == 'all' %}selected{% endif %}>All Levels</option>
+                            <option value="critical" {% if risk_level_filter == 'critical' %}selected{% endif %}>🔴 Critical</option>
+                            <option value="high" {% if risk_level_filter == 'high' %}selected{% endif %}>🟠 High</option>
+                            <option value="medium" {% if risk_level_filter == 'medium' %}selected{% endif %}>🟡 Medium</option>
+                            <option value="low" {% if risk_level_filter == 'low' %}selected{% endif %}>🟢 Low</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="filter-label">CVE Severity</label>
+                        <select name="severity" class="form-select">
+                            <option value="all" {% if severity_filter == 'all' %}selected{% endif %}>All Severities</option>
+                            <option value="critical" {% if severity_filter == 'critical' %}selected{% endif %}>Critical Only</option>
+                            <option value="high" {% if severity_filter == 'high' %}selected{% endif %}>High & Critical</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="filter-label">Min CVE Count</label>
+                        <input type="number" name="min_cve" class="form-control" 
+                               value="{{ min_cve_count or 0 }}" min="0" step="1" 
+                               placeholder="0">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="filter-label">EOL Status</label>
+                        <select name="eol_only" class="form-select">
+                            <option value="false" {% if not eol_only %}selected{% endif %}>All Products</option>
+                            <option value="true" {% if eol_only %}selected{% endif %}>EOL Only</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-sm btn-primary">
+                                <i class="bi bi-funnel"></i> Apply
+                            </button>
+                            <a href="/" class="btn btn-sm btn-outline-secondary">
+                                <i class="bi bi-arrow-counterclockwise"></i> Reset
+                            </a>
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-success dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                    <i class="bi bi-download"></i> Export
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <li><a class="dropdown-item" href="/export/csv{{ '?' + request.query_string.decode() if request.query_string else '' }}">
+                                        <i class="bi bi-file-earmark-spreadsheet text-success"></i> Export as CSV
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="/export/json{{ '?' + request.query_string.decode() if request.query_string else '' }}">
+                                        <i class="bi bi-file-earmark-code text-primary"></i> Export as JSON
+                                    </a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item" href="/api/services">
+                                        <i class="bi bi-code-square text-info"></i> API Documentation
+                                    </a></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Hosts List -->
+        <div class="section-header d-flex justify-content-between align-items-center">
+            <div>
+                <h3 class="section-title">
+                    <i class="bi bi-server"></i> Hosts & Vulnerability Assessment
+                </h3>
+                <small class="text-muted">
+                    Sorted by risk score • Risk = Critical×10 + High×5 + Medium×2 + Low×1
+                </small>
+            </div>
+            <div class="action-buttons">
+                <button class="expand-collapse-btn" onclick="expandAll()">
+                    <i class="bi bi-arrows-expand"></i> Expand All
+                </button>
+                <button class="expand-collapse-btn" onclick="collapseAll()">
+                    <i class="bi bi-arrows-collapse"></i> Collapse All
+                </button>
+            </div>
+        </div>
+
+        {% if host_count == 0 %}
+        <div class="no-data-card">
+            <div class="no-data-icon">
+                <i class="bi bi-inbox"></i>
+            </div>
+            <h4>No hosts match your current filters</h4>
+            <p class="text-muted">Try adjusting your search or filter criteria</p>
+            <a href="/" class="btn btn-primary mt-3">
+                <i class="bi bi-arrow-counterclockwise"></i> Reset All Filters
+            </a>
+        </div>
+        {% else %}
+        
+        {% for host in hosts %}
+        <div class="host-card {{ host.risk_level|lower }}">
+            <div class="host-header collapsed" data-bs-toggle="collapse" data-bs-target="#host-{{ loop.index }}">
+                <div class="row align-items-center">
+                    <div class="col-md-1 text-center">
+                        <div class="risk-score {{ host.risk_level|lower }}">
+                            {{ host.risk_score }}
+                        </div>
+                        <small class="text-muted d-block mt-2" style="font-weight: 600;">RISK</small>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="host-title">
+                            <i class="bi bi-hdd-network-fill me-2"></i>
+                            <code>{{ host.ip_address or 'No IP' }}</code>
+                        </div>
+                        {% if host.domain_name %}
+                        <div class="host-summary">
+                            <i class="bi bi-globe2"></i> {{ host.domain_name }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-2">
+                        <span class="risk-badge-{{ host.risk_level|lower }}">
+                            {% if host.risk_level == 'CRITICAL' %}
+                            <i class="bi bi-exclamation-octagon-fill"></i> CRITICAL
+                            {% elif host.risk_level == 'HIGH' %}
+                            <i class="bi bi-exclamation-triangle-fill"></i> HIGH
+                            {% elif host.risk_level == 'MEDIUM' %}
+                            <i class="bi bi-exclamation-circle-fill"></i> MEDIUM
+                            {% elif host.risk_level == 'LOW' %}
+                            <i class="bi bi-info-circle-fill"></i> LOW
+                            {% else %}
+                            <i class="bi bi-shield-check-fill"></i> SECURE
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="col-md-5">
+                        <div class="d-flex gap-2 flex-wrap">
+                            <span class="badge bg-secondary">
+                                <i class="bi bi-diagram-3"></i> {{ host.total_services }} Services
+                            </span>
+                            {% if host.critical_count > 0 %}
+                            <span class="badge severity-critical">{{ host.critical_count }} Critical</span>
+                            {% endif %}
+                            {% if host.high_count > 0 %}
+                            <span class="badge severity-high">{{ host.high_count }} High</span>
+                            {% endif %}
+                            {% if host.medium_count > 0 %}
+                            <span class="badge severity-medium">{{ host.medium_count }} Medium</span>
+                            {% endif %}
+                            {% if host.low_count > 0 %}
+                            <span class="badge severity-low">{{ host.low_count }} Low</span>
+                            {% endif %}
+                            {% if host.total_cves > 0 %}
+                            <span class="badge bg-info">{{ host.total_cves }} Total CVEs</span>
+                            {% endif %}
+                            {% if host.has_eol %}
+                            <span class="badge badge-eol"><i class="bi bi-hourglass-split"></i> EOL</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-1 text-end">
+                        <i class="bi bi-chevron-down chevron"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="collapse" id="host-{{ loop.index }}">
+                <div class="host-services">
+                    {% for service in host.services %}
+                    <div class="service-row">
+                        <div class="row align-items-center">
+                            <div class="col-md-1 text-center">
+                                <div style="font-size: 1.5rem; font-weight: 700; color: #667eea;">
+                                    {{ service.port_number }}
+                                </div>
+                                <small class="text-muted">{{ service.protocol }}</small>
+                            </div>
+                            <div class="col-md-3">
+                                <div style="font-weight: 600; color: #2c3e50; margin-bottom: 4px;">
+                                    {{ service.name or service.service_type or 'Unknown Service' }}
+                                </div>
+                                <small class="text-muted">
+                                    <i class="bi bi-box-seam"></i> {{ service.product or 'N/A' }}
+                                    {% if service.product_version %}
+                                    <span class="badge bg-light text-dark ms-1">v{{ service.product_version }}</span>
+                                    {% endif %}
+                                </small>
+                            </div>
+                            <div class="col-md-5">
+                                <div class="d-flex gap-2 flex-wrap">
+                                    {% if service.vuln_info.cve_count > 0 %}
+                                        {% if service.vuln_info.critical_count > 0 %}
+                                        <span class="badge severity-critical">
+                                            <i class="bi bi-exclamation-octagon"></i> {{ service.vuln_info.critical_count }} Critical
+                                        </span>
+                                        {% endif %}
+                                        {% if service.vuln_info.high_count > 0 %}
+                                        <span class="badge severity-high">
+                                            <i class="bi bi-exclamation-triangle"></i> {{ service.vuln_info.high_count }} High
+                                        </span>
+                                        {% endif %}
+                                        {% if service.vuln_info.medium_count > 0 %}
+                                        <span class="badge severity-medium">
+                                            <i class="bi bi-exclamation-circle"></i> {{ service.vuln_info.medium_count }} Medium
+                                        </span>
+                                        {% endif %}
+                                        {% if service.vuln_info.low_count > 0 %}
+                                        <span class="badge severity-low">{{ service.vuln_info.low_count }} Low</span>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="badge" style="background: linear-gradient(135deg, #2ed573, #28a745); color: white;">
+                                            <i class="bi bi-shield-check"></i> No Vulnerabilities
+                                        </span>
+                                    {% endif %}
+                                    
+                                    {% if service.vuln_info.eol_date %}
+                                    <span class="badge badge-eol" title="End of Life">
+                                        <i class="bi bi-hourglass-split"></i> EOL
+                                    </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-3 text-end">
+                                {% if service.is_live %}
+                                <span class="badge bg-success me-2">
+                                    <i class="bi bi-activity"></i> Live
+                                </span>
+                                {% endif %}
+                                <a href="/service/{{ service.id }}" class="btn btn-primary btn-sm">
+                                    <i class="bi bi-eye-fill"></i> View Details
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+        
+        {% endif %}
+    </div>
+
+    <!-- Client Selection Modal -->
+    <div class="modal fade" id="clientModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-building"></i> Select Client
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Search box for clients -->
+                    <div class="mb-3">
+                        <input type="text" id="clientSearch" class="form-control" placeholder="Search clients..." onkeyup="filterClients()">
+                    </div>
+                    
+                    <!-- Client list -->
+                    <div class="list-group" id="clientList" style="max-height: 400px; overflow-y: auto;">
+                        <a href="/?client_id=all" class="list-group-item list-group-item-action {% if selected_client_id == 'all' %}active{% endif %}">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <i class="bi bi-globe"></i> <strong>All Clients</strong>
+                                </div>
+                                <span class="badge bg-primary">{{ clients|length }} total</span>
+                            </div>
+                        </a>
+                        
+                        {% for client in clients %}
+                        <a href="/?client_id={{ client.id }}" 
+                           class="list-group-item list-group-item-action client-item {% if client.id|string == selected_client_id %}active{% endif %}"
+                           data-client-name="{{ client.name|lower }}">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <i class="bi bi-building"></i> {{ client.name }}
+                                </div>
+                                <div>
+                                    <span class="badge bg-secondary me-1" title="Hosts">
+                                        <i class="bi bi-hdd-network"></i> {{ client.host_count }}
+                                    </span>
+                                    <span class="badge bg-info" title="Services">
+                                        <i class="bi bi-diagram-3"></i> {{ client.service_count }}
+                                    </span>
+                                </div>
+                            </div>
+                        </a>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <small class="text-muted">
+                        <i class="bi bi-info-circle"></i> Showing {{ clients|length }} clients with active services
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Filter clients in modal
+        function filterClients() {
+            const input = document.getElementById('clientSearch');
+            const filter = input.value.toLowerCase();
+            const items = document.querySelectorAll('.client-item');
+            
+            items.forEach(function(item) {
+                const clientName = item.getAttribute('data-client-name');
+                if (clientName.includes(filter)) {
+                    item.style.display = '';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        }
+    </script>
+    <script>
+        // Enhanced chevron rotation with smooth animation
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('[data-bs-toggle="collapse"]').forEach(function(element) {
+                element.addEventListener('click', function() {
+                    this.classList.toggle('collapsed');
+                });
+            });
+            
+            // Auto-expand search if there's an active search query
+            {% if search_query %}
+            var searchCollapse = new bootstrap.Collapse(document.getElementById('searchCollapse'), {toggle: false});
+            searchCollapse.show();
+            {% endif %}
+        });
+        
+        // Expand all hosts
+        function expandAll() {
+            document.querySelectorAll('.collapse').forEach(function(element) {
+                const bsCollapse = new bootstrap.Collapse(element, {toggle: false});
+                bsCollapse.show();
+            });
+            document.querySelectorAll('.host-header').forEach(function(element) {
+                element.classList.remove('collapsed');
+            });
+        }
+        
+        // Collapse all hosts
+        function collapseAll() {
+            document.querySelectorAll('.collapse').forEach(function(element) {
+                const bsCollapse = new bootstrap.Collapse(element, {toggle: false});
+                bsCollapse.hide();
+            });
+            document.querySelectorAll('.host-header').forEach(function(element) {
+                element.classList.add('collapsed');
+            });
+        }
+    </script>
+</body>
+</html>
+

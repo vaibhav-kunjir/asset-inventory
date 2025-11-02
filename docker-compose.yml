@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      - DB_HOST=host.docker.internal
+      - DB_PORT=4432
+      - DB_NAME=novaapi
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - VULN_DB_PATH=/data/vuln.db
+    volumes:
+      # Bind mount the local directory so vuln.db persists
+      - ./:/data:rw
+    restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+networks:
+  default:
+    name: service-listing-network
+
