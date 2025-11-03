@@ -298,7 +298,9 @@ def index():
                 COUNT(DISTINCT p.id) as service_count,
                 COUNT(DISTINCT ip.address) as host_count
             FROM client c
-            LEFT JOIN port p ON c.id = p.client_id AND p.is_deleted = FALSE
+            LEFT JOIN port p ON c.id = p.client_id 
+                AND p.is_deleted = FALSE 
+                AND p.protocol IS NOT NULL
             LEFT JOIN ip_address ip ON p.ip_address_id = ip.id
             WHERE c.is_deleted = FALSE
             GROUP BY c.id, c.name
@@ -331,6 +333,7 @@ def index():
             LEFT JOIN domain d ON p.domain_id = d.id
             LEFT JOIN client c ON p.client_id = c.id
             WHERE p.is_deleted = FALSE
+              AND p.protocol IS NOT NULL
         """
         
         params = []
@@ -599,6 +602,7 @@ def api_services():
             LEFT JOIN ip_address ip ON p.ip_address_id = ip.id
             LEFT JOIN domain d ON p.domain_id = d.id
             WHERE p.is_deleted = FALSE
+              AND p.protocol IS NOT NULL
             ORDER BY p.created_at DESC
             LIMIT 100
         """
@@ -694,6 +698,7 @@ def export_csv():
             LEFT JOIN ip_address ip ON p.ip_address_id = ip.id
             LEFT JOIN domain d ON p.domain_id = d.id
             WHERE p.is_deleted = FALSE
+              AND p.protocol IS NOT NULL
             ORDER BY ip.address, p.port_number
             LIMIT 500
         """)
