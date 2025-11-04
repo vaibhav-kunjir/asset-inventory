@@ -216,7 +216,16 @@ def get_vulnerabilities_for_service(product, version=None):
         
         cursor.execute(query, like_patterns)
         
-        cves = [dict(row) for row in cursor.fetchall()]
+        # Deduplicate CVEs by cve_id (a CVE can have multiple configurations)
+        cves_raw = cursor.fetchall()
+        seen_cves = {}
+        for row in cves_raw:
+            cve_dict = dict(row)
+            cve_id = cve_dict.get('cve_id')
+            if cve_id and cve_id not in seen_cves:
+                seen_cves[cve_id] = cve_dict
+        
+        cves = list(seen_cves.values())
         
         # Calculate severity counts based on CVSS scores
         critical_count = sum(1 for cve in cves if cve.get('base_score') and cve['base_score'] >= 9.0)
